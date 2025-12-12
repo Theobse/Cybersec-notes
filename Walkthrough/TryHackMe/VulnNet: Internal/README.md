@@ -6,7 +6,7 @@
 VulnNet Entertainment learns from its mistakes, and now they have something new for you...  
 
 # Objectifs pédagogiques
-- Cette room permet de travailler plusieurs notions clés en pentest :
+Cette room permet de travailler plusieurs notions clés en pentest :
 - Énumération de services réseau
 - Exploitation de services mal configurés (SMB, NFS, Redis, rsync)
 - Pivot interne
