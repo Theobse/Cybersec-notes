@@ -12,3 +12,13 @@ VulnNet Entertainment learns from its mistakes, and now they have something new 
 - Pivot interne
 - Accès persistant via clés SSH
 - Escalade de privilèges via un service interne (TeamCity)
+
+⚠️ Ce walkthrough est fourni à des fins éducatives uniquement.  
+N’effectuez jamais ces techniques sur des systèmes sans autorisation explicite.  
+
+# 1. Reconnaissance (Recon)
+**Objectif**  
+Identifier la surface d’attaque :
+- ports ouverts
+- services exposés
+- système d’exploitation
