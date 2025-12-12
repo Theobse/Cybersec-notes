@@ -22,3 +22,8 @@ Identifier la surface d’attaque :
 - ports ouverts
 - services exposés
 - système d’exploitation
+
+Scan réseau :
+'''bash
+nmap -sC -sV -A -p- -T4 IP_CIBLE
+'''
