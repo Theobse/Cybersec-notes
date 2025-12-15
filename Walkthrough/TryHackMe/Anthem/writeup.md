@@ -184,6 +184,10 @@ Umbraco version 7.15.4
 Connexion RDP effectuée avec les identifiants précédemment découverts
 (**adresse IP, utilisateur et mot de passe masqués**).
 
+```shell
+xfreerdp3 /v:IP_CIBLE /u:NOM_UTILISATEUR /p:MOT_DE_PASSE
+```
+
 ---
 
 ## user.txt
