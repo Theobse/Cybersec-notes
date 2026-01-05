@@ -81,7 +81,7 @@ En analysant les headers, on confirme que l’app utilise :
 - Templates EJS
 C’est une fuite de stack exploitable pour rechercher des CVE ou cibler des vulnérabilités spécifiques Node / Express / EJS.
 
-L'erreur nous permet de savoir le templates utilisé par EJS (Embedded JavaScript) pour afficher le mot de passe sur la page après update grâce aux balises '<%  %>'. Sur internet on trouve facilement de nombreuses ressources sur la faille SSTI avec EJS, dont ces ressources parlant de la CVE-2022-29078 (ejs server side template injection rce) :
+L'erreur nous permet de savoir le templates utilisé par EJS (Embedded JavaScript) pour afficher le mot de passe sur la page après update grâce aux balises `<% %>`. Sur internet on trouve facilement de nombreuses ressources sur la faille SSTI avec EJS, dont ces ressources parlant de la CVE-2022-29078 (ejs server side template injection rce) :
 - https://github.com/mde/ejs/issues/720
 - https://eslam.io/posts/ejs-server-side-template-injection-rce/
 
