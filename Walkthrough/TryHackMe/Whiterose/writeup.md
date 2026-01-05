@@ -69,7 +69,25 @@ X-Content-Type-Options: nosniff
 ```
 
 ```text
-ReferenceError: /home/web/app/views/settings.ejs:14<br> &nbsp; &nbsp;12| &nbsp; &nbsp; &nbsp; &nbsp; &lt;div class=&quot;alert alert-info mb-3&quot;&gt;&lt;%= message %&gt;&lt;/div&gt;<br> &nbsp; &nbsp;13| &nbsp; &nbsp; &nbsp; &lt;% } %&gt;<br> &gt;&gt; 14| &nbsp; &nbsp; &nbsp; &lt;% if (password != -1) { %&gt;<br> &nbsp; &nbsp;15| &nbsp; &nbsp; &nbsp; &nbsp; &lt;div class=&quot;alert alert-success mb-3&quot;&gt;Password updated to &#39;&lt;%= password %&gt;&#39;&lt;/div&gt;<br> &nbsp; &nbsp;16| &nbsp; &nbsp; &nbsp; &lt;% } %&gt;<br> &nbsp; &nbsp;17| &nbsp; &nbsp; &nbsp; &lt;% if (typeof error != &#39;undefined&#39;) { %&gt;<br><br>password is not defined<br> &nbsp; &nbsp;at eval (&quot;/home/web/app/views/settings.ejs&quot;:27:8)<br> &nbsp; &nbsp;at settings (/home/web/app/node_modules/ejs/lib/ejs.js:692:17)<br> &nbsp; &nbsp;at tryHandleCache (/home/web/app/node_modules/ejs/lib/ejs.js:272:36)<br> &nbsp; &nbsp;at View.exports.renderFile [as engine] (/home/web/app/node_modules/ejs/lib/ejs.js:489:10)<br> &nbsp; &nbsp;at View.render (/home/web/app/node_modules/express/lib/view.js:135:8)<br> &nbsp; &nbsp;at tryRender (/home/web/app/node_modules/express/lib/application.js:657:10)<br> &nbsp; &nbsp;at Function.render (/home/web/app/node_modules/express/lib/application.js:609:3)<br> &nbsp; &nbsp;at ServerResponse.render (/home/web/app/node_modules/express/lib/response.js:1039:7)<br> &nbsp; &nbsp;at /home/web/app/routes/settings.js:27:7<br> &nbsp; &nbsp;at runMicrotasks (&lt;anonymous&gt;)
+ReferenceError: /home/web/app/views/settings.ejs:14
+  12| <div class="alert alert-info mb-3"><%= message %></div>
+  13| <% } %>
+>>14| <% if (password != -1) { %>
+  15| <div class="alert alert-success mb-3">Password updated to '<%= password %>'</div>
+  16| <% } %>
+  17| <% if (typeof error != 'undefined') { %>
+
+password is not defined
+  at eval ("/home/web/app/views/settings.ejs":27:8)
+  at settings (/home/web/app/node_modules/ejs/lib/ejs.js:692:17)
+  at tryHandleCache (/home/web/app/node_modules/ejs/lib/ejs.js:272:36)
+  at View.exports.renderFile [as engine] (/home/web/app/node_modules/ejs/lib/ejs.js:489:10)
+  at View.render (/home/web/app/node_modules/express/lib/view.js:135:8)
+  at tryRender (/home/web/app/node_modules/express/lib/application.js:657:10)
+  at Function.render (/home/web/app/node_modules/express/lib/application.js:609:3)
+  at ServerResponse.render (/home/web/app/node_modules/express/lib/response.js:1039:7)
+  at /home/web/app/routes/settings.js:27:7
+  at runMicrotasks (<anonymous>)
 ```
 
 L’application a crashé en traitant ta requête. Ici il ne s'agit pas d'un problème réseau ni d’authentification, mais un bug applicatif.  
