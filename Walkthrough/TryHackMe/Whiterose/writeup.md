@@ -162,3 +162,23 @@ python3 -c 'import socket,subprocess,os;s=socket.socket(socket.AF_INET,socket.SO
 ![image](https://github.com/user-attachments/assets/e862b1c2-9371-43c6-8add-33cc70ba0e8d)
 -->
 
+On effectue une shell stabilization :
+<!--
+![image](https://github.com/user-attachments/assets/ef5be721-2c95-4cc9-89c3-b5b04de621e9)
+-->
+
+On trouve le flag user.txt dans le home de l'utilisateur web.
+<!--
+![image](https://github.com/user-attachments/assets/7fe17284-4f45-4755-9b8a-1ba85dd74e56)
+-->
+
+Liste ce que l’utilisateur web peut exécuter avec sudo. On apprend que l’utilisateur web peut modifier un fichier de configuration Nginx en tant que root, sans mot de passe.
+<!--
+![image](https://github.com/user-attachments/assets/549edde0-3acd-4571-ae35-6f200a31c15f)
+-->
+
+En vérifiant la version de sudo, nous voyons qu'il s'agit de la version 1.9.12p1.
+<!--
+![image](https://github.com/user-attachments/assets/a6e74132-eecb-4d01-bf05-bfaadc59fb39)
+-->
+
