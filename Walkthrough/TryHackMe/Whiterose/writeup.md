@@ -190,3 +190,26 @@ Cela signifie qu'en utilisant l'argument -- dans les variables d'environnement d
 
 Pour utiliser cette vulnérabilité à des fins d'élévation de privilèges, nous pouvons écrire dans de nombreux fichiers. Dans ce cas, nous pouvons simplement choisir d'écrire dans le fichier /etc/sudoers pour nous accorder tous les privilèges sudo.
 
+Nous pouvons exploiter la vulnérabilité comme suit :
+web@cyprusbank:~/app$ export EDITOR="nano -- /etc/sudoers"
+web@cyprusbank:~/app$ sudo sudoedit /etc/nginx/sites-available/admin.cyprusbank.thm
+
+As we can see, we were able to open the /etc/sudoers file with nano.
+<!--
+![image](https://github.com/user-attachments/assets/019cf8b5-1406-42cc-bffe-7f7f56a074a0)
+-->
+
+Now, by making the addition of web ALL=(ALL) NOPASSWD: ALL to the file, we can grant our current user full sudo privileges.
+<!--
+![image](https://github.com/user-attachments/assets/36834f4c-cb6c-482a-ab68-5c0862ba3af7)
+-->
+
+After saving the file and closing both files, we can see the changes made to our sudo privileges.
+<!--
+![image](https://github.com/user-attachments/assets/866d94a7-3c15-449f-97c3-66dbcbd26b2a)
+-->
+
+Finally, by simply running sudo su -, we can get a shell as the root user and read the root flag at /root/root.txt.
+<!--
+![image](https://github.com/user-attachments/assets/0eee1307-7369-41f4-a04f-4c64d06162a4)
+-->
