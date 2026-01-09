@@ -193,6 +193,8 @@ Informations critiques divulguées :
 
 # 7. Validation de la SSTI → RCE (CVE-2022-29078)
 
+L’exploitation est rendue possible par une mauvaise configuration d’Express exposant les `view options`, et non par EJS seul.
+
 De nombreuses ressources sur Internet parlent de la CVE-2022-29078 permettant d'obtenir une exécution de code arbitraire à partir d'une vulnérabilité SSTI :
 - https://github.com/mde/ejs/issues/720
 - https://eslam.io/posts/ejs-server-side-template-injection-rce/
@@ -238,14 +240,10 @@ sans téléchargement ni écriture de fichier sur la machine cible, afin de réd
 
 Ce payload ouvre une connexion TCP vers la machine attaquante, redirige les entrées/sorties standard vers le socket, puis ouvre un shell interactif via `pty`, assurant une session stable.
 
-➡️ Shell obtenu 
+➡️ Obtention et stabilisation du shell 
 
 ![image](https://github.com/user-attachments/assets/e862b1c2-9371-43c6-8add-33cc70ba0e8d)
 
- 
-➡️ Stabilisation du shell 
-
-![image](https://github.com/user-attachments/assets/ef5be721-2c95-4cc9-89c3-b5b04de621e9)
 
 **Impact sécurité :**  
 L’exécution de commandes arbitraires permet à un attaquant d’obtenir un accès interactif au système,
@@ -256,8 +254,6 @@ ouvrant la voie au vol de données, à l’installation de portes dérobées et 
 Utilisateur courant : web
 
 Flag trouvé dans le répertoire `/home/web/user.txt`
-
-![image](https://github.com/user-attachments/assets/7fe17284-4f45-4755-9b8a-1ba85dd74e56)
 
 # 10. Élévation de privilèges – sudoedit (CVE-2023-22809)
 
@@ -310,8 +306,6 @@ Après avoir enregistré le fichier, nous pouvons voir les modifications apport�
 
 Enfin, en exécutant simplement sudo `sudo su -`, nous pouvons obtenir un shell en tant qu'utilisateur root et lire le drapeau root dans /root/root.txt.
 
-![image](https://github.com/user-attachments/assets/0eee1307-7369-41f4-a04f-4c64d06162a4)
-
 ➡️ Accès root obtenu  
 ➡️ Flag : /root/root.txt
 
@@ -329,3 +323,9 @@ Enfin, en exécutant simplement sudo `sudo su -`, nous pouvons obtenir un shell 
 - Lecture de stack trace
 - Exploitation Node.js / EJS
 - Privilege escalation Linux
+
+### Recommandations de sécurité
+- Implémenter des contrôles d’accès côté serveur pour prévenir les IDOR
+- Ne jamais exposer les `view options` d’Express
+- Désactiver les stack traces en production
+- Mettre à jour sudo et limiter l’usage de sudoedit
