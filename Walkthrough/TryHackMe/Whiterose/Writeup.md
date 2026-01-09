@@ -69,3 +69,13 @@ Analyse rapide côté client:
 # 2. Énumération
 
 ### Recherche de Vhosts
+
+![image](https://github.com/user-attachments/assets/a3968b74-90c4-4fa5-8e24-3e210ca359f4)
+
+Une énumération des virtual hosts révèle :  
+`admin.cyprusbank.thm`
+
+➡️ Ajout dans /etc/hosts puis navigation vers le sous-domaine.
+
+# 3. Accès à l’interface d’administration
+
