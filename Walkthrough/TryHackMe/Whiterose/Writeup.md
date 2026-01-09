@@ -233,31 +233,52 @@ Flag trouvé dans le répertoire `/home/web/user.txt`
 # 10. Élévation de privilèges – sudoedit (CVE-2023-22809)
 
 ### Analyse sudo
-sudo -l
+La commande `sudo -l` liste tout ce ce que l’utilisateur web peut exécuter avec sudo. 
+
+![image](https://github.com/user-attachments/assets/549edde0-3acd-4571-ae35-6f200a31c15f)
 
 ### Résultat :
-- Droit sudoedit sur un fichier nginx
-- Sans mot de passe
+L’utilisateur web peut modifier un fichier de configuration Nginx en tant que root, sans mot de passe.
 
-Version sudo : 1.9.12p1
-
+Version sudo : 1.9.12p1  
 ➡️ Version vulnérable à CVE-2023-22809
 
-# 11. Exploitation de sudoedit
+# 11. Exploitation de sudoedit (sudo -e)
 
 ### Principe
 sudoedit permet d’injecter des arguments via la variable EDITOR.
 
+Essentiellement, sudoedit permet aux utilisateurs de choisir leur éditeur à l'aide de variables d'environnement telles que SUDO_EDITOR, VISUAL ou EDITOR. Étant donné que les valeurs de ces variables peuvent être non seulement l'éditeur lui-même, mais aussi les arguments à passer à l'éditeur choisi, sudo utilise -- lors de leur analyse pour séparer l'éditeur et ses arguments des fichiers à ouvrir pour modification.
+
+Cela signifie qu'en utilisant l'argument -- dans les variables d'environnement de l'éditeur, nous pouvons le forcer à ouvrir d'autres fichiers que ceux autorisés dans la commande sudoedit que nous pouvons exécuter. Par conséquent, comme nous pouvons exécuter sudoedit en tant que root avec sudo, nous pouvons modifier n'importe quel fichier que nous voulons en tant que root.
+
+Pour utiliser cette vulnérabilité à des fins d'élévation de privilèges, nous pouvons écrire dans de nombreux fichiers. Dans ce cas, nous pouvons simplement choisir d'écrire dans le fichier /etc/sudoers pour nous accorder tous les privilèges sudo.
+
+Plus d'informations détaillées à ce sujet dans cet avis de sécurité publié par Synacktiv (https://www.synacktiv.com/sites/default/files/2023-01/sudo-CVE-2023-22809.pdf)
+
 ### Exploit
+
+``` bash
 export EDITOR="nano -- /etc/sudoers"
 sudo sudoedit /etc/nginx/sites-available/admin.cyprusbank.thm
+```
 
-Ajout dans /etc/sudoers :
+Le fichier `/etc/sudoers` s'ouvre avec nano.
 
-web ALL=(ALL) NOPASSWD: ALL
+En ajoutant `web ALL=(ALL) NOPASSWD: ALL` au fichier, nous pouvons accorder à notre utilisateur actuel tous les privilèges sudo.
+
+![image](https://github.com/user-attachments/assets/36834f4c-cb6c-482a-ab68-5c0862ba3af7)
 
 # 12. Accès root
-sudo su -
+
+Après avoir enregistré le fichier, nous pouvons voir les modifications apportées à nos privilèges sudo.
+
+![image](https://github.com/user-attachments/assets/866d94a7-3c15-449f-97c3-66dbcbd26b2a)
+
+
+Enfin, en exécutant simplement sudo `sudo su -`, nous pouvons obtenir un shell en tant qu'utilisateur root et lire le drapeau root dans /root/root.txt.
+
+![image](https://github.com/user-attachments/assets/0eee1307-7369-41f4-a04f-4c64d06162a4)
 
 ➡️ Accès root obtenu  
 ➡️ Flag : /root/root.txt
@@ -266,7 +287,7 @@ sudo su -
 
 ### Vulnérabilités exploitées
 - IDOR
-- SSTI (EJS) → RCE
+- SSTI (EJS) → RCE (CVE-2022-29078)
 - Mauvaise configuration sudo
 - CVE-2023-22809 (sudoedit)
 
