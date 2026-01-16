@@ -1,18 +1,22 @@
-# Theo Bse – Pentest Portfolio
+[Accueil](index.md) | [Rapports](reports.md) | [Méthodologie](methodology.md) | [À propos](about.md)
 
-## 👋 À propos
-Pentester junior spécialisé en sécurité offensive.
-Ce site présente des audits réalisés dans des environnements légaux et contrôlés.
+# Theo — Pentest Portfolio
 
-## 🧪 Rapports
-- [Overpass – Authentication Bypass](reports/overpass/report-fr.md)
-- [Whiterose – Web to Root](reports/whiterose/report-fr.md)
+## 🎯 Objectif
+Ce site présente des rapports de tests d’intrusion et des notes techniques
+réalisés dans des environnements légaux et contrôlés, à des fins pédagogiques.
+
+## 🧪 Contenu
+- Rapports de pentest (web, système, auth, privesc)
+- Méthodologie personnelle de tests offensifs
+- Notes issues de plateformes d’entraînement
 
 ## 🧰 Compétences
 - Web Application Pentesting
-- Authentication & Authorization Attacks
+- Authentication & Access Control
 - Linux Privilege Escalation
-- Reporting & Risk Analysis
+- Reporting technique
 
 ## ⚠️ Disclaimer
-Tous les tests ont été réalisés avec autorisation explicite.
+Tous les tests ont été réalisés avec autorisation explicite
+dans des environnements de formation ou de laboratoire.
