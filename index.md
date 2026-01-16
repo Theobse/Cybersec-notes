@@ -1,22 +1,34 @@
 [Accueil](index.md) | [Rapports](reports.md) | [Méthodologie](methodology.md) | [À propos](about.md)
 
-# Theo — Pentest Portfolio
+# Théo Besse — Offensive Security (Pentest Portfolio)
 
-## 🎯 Objectif
-Ce site présente des rapports de tests d’intrusion et des notes techniques
-réalisés dans des environnements légaux et contrôlés, à des fins pédagogiques.
+Junior pentester / analyste sécurité offensive.  
+Je publie ici des **rapports de tests d’intrusion** et une **méthodologie** reproductible, issus d’environnements **légaux et contrôlés** (labs, CTF, environnements de formation).
 
-## 🧪 Contenu
-- Rapports de pentest (web, système, auth, privesc)
-- Méthodologie personnelle de tests offensifs
-- Notes issues de plateformes d’entraînement
+---
 
-## 🧰 Compétences
-- Web Application Pentesting
-- Authentication & Access Control
-- Linux Privilege Escalation
-- Reporting technique
+## 🚀 À voir en priorité
+- 📄 [Rapports](reports.md) — rapports structurés (FR/EN si disponible)
+- 🧠 [Méthodologie](methodology.md) — checklist et approche de test
+- 👤 [À propos](about.md) — parcours, expériences, compétences
+
+---
+
+## 🧪 Domaines couverts
+- **Pentest Web** (OWASP Top 10) : injections, XSS, SSRF, CSRF, IDOR
+- **Pentest Réseau** : scan, énumération, mauvaises configurations (SMB, etc.)
+- **Active Directory** : Kerberoasting, AS-REP Roast, Pass-the-Hash
+- **Post-exploitation** : reverse shells, pivoting, privesc Linux/Windows
+
+---
+
+## 📈 Progression & pratique
+- TryHackMe : **Top 3%** (entraînement régulier)
+- RootMe : **1460 points**
+- Préparation eJPT (INE)
+- CTFs : Hackropole, 404CTF, FCSC…
+
+---
 
 ## ⚠️ Disclaimer
-Tous les tests ont été réalisés avec autorisation explicite
-dans des environnements de formation ou de laboratoire.
+Tous les contenus sont publiés à des fins éducatives, **sans divulguer de flags**, et proviennent d’environnements où les tests sont autorisés.
