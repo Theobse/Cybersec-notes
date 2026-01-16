@@ -11,7 +11,7 @@
 ## 🖥️ Système
 
 - **Whiterose – Web to Root**  
-  👉 [Lire le rapport](reports/whiterose/report-fr.md)
+  👉 [Lire le rapport](reports/fr/whiterose-rapport-exploitation.md)
 
 
 ## 🧠 À venir
