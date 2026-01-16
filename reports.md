@@ -3,10 +3,16 @@
 # 🧪 Rapports de Pentest
 
 ## 🔐 Web
-- Overpass — Authentication Bypass *(à venir)*
+
+- **Overpass – Authentication Bypass**  
+  👉 [Lire le rapport (FR)](reports/overpass/report-fr.md)  
+  👉 [Read report (EN)](reports/overpass/report-en.md)
 
 ## 🖥️ Système
-- Whiterose — Web to Root
+
+- **Whiterose – Web to Root**  
+  👉 [Lire le rapport](reports/whiterose/report-fr.md)
+
 
 ## 🧠 À venir
 - API Authentication Flaws
